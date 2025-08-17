@@ -31,6 +31,8 @@ class Product extends Model
      */
     public function distributions()
     {
-        return $this->hasMany(Distribution::class);
+        return $this->belongsToMany(Distribution::class, 'distribution_product')
+                    ->withPivot('quantity')
+                    ->withTimestamps();
     }
 }
