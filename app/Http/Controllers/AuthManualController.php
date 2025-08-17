@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+
 
 class AuthManualController extends Controller
 {
@@ -12,20 +15,20 @@ class AuthManualController extends Controller
         return view('manual-auth.login');
     }
 
-    public function loginProses(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+   public function loginProses(Request $request)
+{
+    $credentials = $request->only('email', 'password');
 
-        if(Auth::attempt($credentials)){
-            $request->session()->regenerate();
-            return redirect()->route('distributions.index');
-        }
+    $user = User::where('email', $credentials['email'])->first();
 
-        return back();
+    if ($user && Hash::check($credentials['password'], $user->password)) {
+        Auth::login($user); // <- pakai Auth bawaan Laravel
+        return redirect()->route('distributions.index');
     }
+
+    return back()->withErrors(['email' => 'Email atau password salah']);
+}
+
 
     public function logout(Request $request)
     {
