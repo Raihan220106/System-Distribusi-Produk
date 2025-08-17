@@ -20,7 +20,7 @@ class DistributionController extends Controller
         if ($request->ajax()) {
             $data = Distribution::with('barista')->latest();
             return DataTables::of($data)
-                ->addColumn('barista', fn($row) => $row->barista->name)
+                ->addColumn('barista', fn($row) => optional($row->barista)->name ?? '-')
                 ->addColumn('action', function($row){
                     return '
                         <button class="btn btn-sm btn-info detail" data-id="'.$row->id.'">Detail</button>
@@ -32,6 +32,13 @@ class DistributionController extends Controller
         return view('distributions.index');
         
     }
+
+    public function show($id)
+    {
+        $distribution = Distribution::with('products')->findOrFail($id);
+        return view('distributions.show', compact('distribution'));
+    }
+
 
     public function create()
     {
@@ -52,8 +59,9 @@ class DistributionController extends Controller
             ]);
 
             DistributionDetail::whereNull('distribution_id')
-                ->where('created_by', auth()->id)
-                ->update(['distribution_id' => $distribution->id]);
+            ->where('created_by', Auth::id())
+            ->update(['distribution_id' => $distribution->id]);
+
         });
 
         return redirect()->route('distributions.index')->with('success','Distribusi berhasil disimpan');
