@@ -1,70 +1,96 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mt-4">
-    <div class="card shadow-lg rounded-3">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h4 class="mb-0"><i class="bi bi-box-seam"></i> Distribusi Produk</h4>
-            <a href="{{ route('distributions.create') }}" class="btn btn-light btn-sm">
-                <i class="bi bi-plus-circle"></i> Tambah Distribusi
-            </a>
-        </div>
-        <div class="card-body">
-            <table class="table table-bordered table-striped table-hover align-middle" id="table-distributions" style="width:100%">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Tanggal</th>
-                        <th>Barista</th>
-                        <th>Total Qty</th>
-                        <th>Estimasi</th>
-                        <th>Notes</th>
-                        <th class="text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
+<div class="container">
+    <h2 class="mb-3">Daftar Distribusi</h2>
+    <a href="{{ route('distributions.create') }}" class="btn btn-primary mb-3">Tambah Distribusi</a>
+
+    <table class="table table-bordered" id="distributionTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Barista</th>
+                <th>Total Qty</th>
+                <th>Estimasi</th>
+                <th>Catatan</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+          
+        </tbody>
+    </table>
 </div>
 
-{{-- DataTables --}}
+<!-- Modal Detail -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Detail Distribusi</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <div id="detailContent"></div>
+        </div>
+    </div>
+  </div>
+</div>
+@endsection
+
+@push('scripts')
 <script>
 $(function(){
-    $('#table-distributions').DataTable({
+    let table = $('#distributionTable').DataTable({
         processing: true,
         serverSide: true,
-        responsive: true,
-        autoWidth: false,
-        pageLength: 10,
-        ajax: "{{ route('distributions.index') }}",
-        columns:[
-            {data:'created_at'},
-            {data:'barista'},
-            {data:'total_qty', className: "text-center fw-bold"},
-            {
-                data:'estimated_result',
-                render: function(data){
-                    return `<span class="badge bg-success">${data}</span>`;
+        ajax: '{{ route("distributions.index") }}',
+        columns: [
+            {data: 'id', name: 'id'},
+            {data: 'barista', name: 'barista'},
+            {data: 'total_qty', name: 'total_qty'},
+            {data: 'estimated_result', name: 'estimated_result'},
+            {data: 'notes', name: 'notes'},
+            {data: 'action', name: 'action', orderable: false, searchable: false}
+        ]
+    });
+
+    // Detail
+    $(document).on('click', '.btn-detail', function() {
+    let id = $(this).data('id');
+    $.get('/distributions/' + id, function(data) {
+        let html = '';
+        data.details.forEach(function(detail, i) {
+            html += `
+                <tr>
+                    <td>${i+1}</td>
+                    <td>${detail.product.name}</td>
+                    <td>${detail.qty}</td>
+                    <td>${detail.price}</td>
+                    <td>${detail.total}</td>
+                </tr>`;
+        });
+        $('#detailTable tbody').html(html);
+        $('#detailModal').modal('show');
+    });
+});
+
+    // Delete
+    $(document).on('click', '.delete', function(){
+        if(confirm('Yakin hapus distribusi ini?')){
+            let id = $(this).data('id');
+            $.ajax({
+                url: '/distributions/'+id,
+                type: 'DELETE',
+                data: {_token: '{{ csrf_token() }}'},
+                success: function(){
+                    table.ajax.reload();
                 }
-            },
-            {data:'notes'},
-            {
-                data:'action', 
-                orderable:false, 
-                searchable:false,
-                className:"text-center"
-            }
-        ],
-        language: {
-            search: "_INPUT_",
-            searchPlaceholder: "Cari distribusi...",
-            lengthMenu: "Tampilkan _MENU_ data",
-            zeroRecords: "Tidak ada data ditemukan",
-            info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
-            infoEmpty: "Tidak ada data tersedia",
-            infoFiltered: "(difilter dari total _MAX_ data)"
+            });
         }
     });
 });
 </script>
-@endsection
+
+{{-- <script src="{{ asset('js/distributions.js') }}"></script> --}}
+@endpush
