@@ -17,8 +17,11 @@ Route::post('/logout', [AuthManualController::class,'logout'])->name('logout');
 // Routes yang hanya bisa diakses setelah login
 Route::middleware('auth')->group(function () {
     Route::resource('distributions', DistributionController::class);
+    Route::get('/distributions/{distribution}/details', [DistributionController::class, 'details'])->name('distributions.details');
 
     Route::get('/distribution-products', [DistributionProductController::class, 'index']);
     Route::post('/distribution-products', [DistributionProductController::class, 'store']);
     Route::delete('/distribution-products/{id}', [DistributionProductController::class, 'destroy']);
+    Route::get('/distributions/{id}', [DistributionController::class, 'show'])->name('distributions.show');
+
 });
